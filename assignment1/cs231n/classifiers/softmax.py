@@ -1,7 +1,7 @@
 from builtins import range
 import numpy as np
 from random import shuffle
-from past.builtins import xrange
+#from past.builtins import xrange
 
 
 def softmax_loss_naive(W, X, y, reg):
@@ -39,13 +39,19 @@ def softmax_loss_naive(W, X, y, reg):
         logp = np.log(p)
 
         loss -= logp[y[i]]  # negative log probability is the loss
+        p_copy = p.copy()
+        p_copy[y[i]] -= 1
+        product = np.outer(X[i], p_copy)
+        dW += product 
 
+    # normalize dw and add xorrectly L2 normalization
+    dW = dW / num_train + 2 * reg * W
 
     # normalized hinge loss plus regularization
     loss = loss / num_train + reg * np.sum(W * W)
 
     #############################################################################
-    # TODO:                                                                     #
+    # DONE:                                                                     #
     # Compute the gradient of the loss function and store it dW.                #
     # Rather that first computing the loss and then computing the derivative,   #
     # it may be simpler to compute the derivative at the same time that the     #
@@ -65,18 +71,35 @@ def softmax_loss_vectorized(W, X, y, reg):
     """
     # Initialize the loss and gradient to zero.
     loss = 0.0
+    N = X.shape[0]
     dW = np.zeros_like(W)
 
 
     #############################################################################
-    # TODO:                                                                     #
+    # DONE:                                                                     #
     # Implement a vectorized version of the softmax loss, storing the           #
     # result in loss.                                                           #
     #############################################################################
+    scores = X.dot(W)  # shape (N,C)
+    scores -= np.max(scores, axis=1, keepdims=True)
+    p = np.exp(scores)
+    sum_values = np.sum(p, axis=1)
+    p = p / sum_values[:, np.newaxis]  # to normalize
+    logp = np.log(p)
+    loss -= np.sum(logp[np.arange(N), y])  # negative log probability is the loss
 
+    p_copy = p.copy()
+    p_copy[np.arange(N), y] -= 1
+    dW += X.T.dot(p_copy)
+
+    # normalize dw and add xorrectly L2 normalization
+    dW = dW / N + 2 * reg * W
+
+    # normalized hinge loss plus regularization
+    loss = loss / N + reg * np.sum(W * W)
 
     #############################################################################
-    # TODO:                                                                     #
+    # DONE:                                                                     #
     # Implement a vectorized version of the gradient for the softmax            #
     # loss, storing the result in dW.                                           #
     #                                                                           #

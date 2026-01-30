@@ -1,7 +1,7 @@
 from builtins import range
 from builtins import object
 import numpy as np
-from past.builtins import xrange
+#from past.builtins import xrange
 
 
 class KNearestNeighbor(object):
@@ -75,7 +75,7 @@ class KNearestNeighbor(object):
                 # training point, and store the result in dists[i, j]. You should   #
                 # not use a loop over dimension, nor use np.linalg.norm().          #
                 #####################################################################
-                dists[i,j] = np.sqrt(np.sum(np.pow(X[i] - self.X_train[j]), 2))
+                dists[i,j] = np.sqrt(np.sum((X[i] - self.X_train[j]) ** 2))
         return dists
 
     def compute_distances_one_loop(self, X):
@@ -95,7 +95,7 @@ class KNearestNeighbor(object):
             # points, and store the result in dists[i, :].                        #
             # Do not use np.linalg.norm().                                        #
             #######################################################################
-            dists[i, :] = np.sqrt(np.sum(np.pow(X[i] - self.X_train[:]), 2))
+            dists[i, :] = np.sqrt(np.sum((X[i] - self.X_train[:]) ** 2))
         return dists
 
     def compute_distances_no_loops(self, X):
@@ -121,7 +121,9 @@ class KNearestNeighbor(object):
         # HINT: Try to formulate the l2 distance using matrix multiplication    #
         #       and two broadcast sums.                                         #
         #########################################################################
-        dists = np.sqrt(np.sum(np.pow(X, 2) + np.pow(self.X_train.T, 2) - 2*X.dot(self.X_train.T)))
+        x = np.sum(X ** 2, axis=1)
+        y = np.sum(self.X_train.T ** 2, axis=1)
+        dists = np.sqrt(x + y - 2*X.dot(self.X_train.T))
 
         return dists
 
@@ -145,21 +147,25 @@ class KNearestNeighbor(object):
             # the ith test point.
             closest_y = []
             #########################################################################
-            # TODO:                                                                 #
+            # DONE:                                                                 #
             # Use the distance matrix to find the k nearest neighbors of the ith    #
             # testing point, and use self.y_train to find the labels of these       #
             # neighbors. Store these labels in closest_y.                           #
             # Hint: Look up the function numpy.argsort.                             #
             #########################################################################
-
+            idx_dist = np.argsort(dists[i])[:k]
+            # k_vals = np.sort(idx_dist)[:k]
+            k_nearest = (dists[i])[idx_dist]
+            closest_y = [val for val in self.y_train[idx_dist]]
 
             #########################################################################
-            # TODO:                                                                 #
+            # DONE:                                                                 #
             # Now that you have found the labels of the k nearest neighbors, you    #
             # need to find the most common label in the list closest_y of labels.   #
             # Store this label in y_pred[i]. Break ties by choosing the smaller     #
             # label.                                                                #
             #########################################################################
-
+            higher_occ_value = [closest_y.count(val) for val in np.unique(closest_y)]  # for each class 0 to 9, you will have the nb of occurence
+            y_pred[i] = closest_y[(np.argsort(higher_occ_value)[-1])]
 
         return y_pred
