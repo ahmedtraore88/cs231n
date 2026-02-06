@@ -95,7 +95,7 @@ class KNearestNeighbor(object):
             # points, and store the result in dists[i, :].                        #
             # Do not use np.linalg.norm().                                        #
             #######################################################################
-            dists[i, :] = np.sqrt(np.sum((X[i] - self.X_train[:]) ** 2))
+            dists[i] = np.sqrt(np.sum((X[i] - self.X_train[:]) ** 2, axis=1))
         return dists
 
     def compute_distances_no_loops(self, X):
@@ -121,9 +121,9 @@ class KNearestNeighbor(object):
         # HINT: Try to formulate the l2 distance using matrix multiplication    #
         #       and two broadcast sums.                                         #
         #########################################################################
-        x = np.sum(X ** 2, axis=1)
-        y = np.sum(self.X_train.T ** 2, axis=1)
-        dists = np.sqrt(x + y - 2*X.dot(self.X_train.T))
+        x = np.sum(X ** 2, axis=1).reshape(num_test, 1)
+        y = np.sum(self.X_train ** 2, axis=1).reshape(num_train, 1)
+        dists = np.sqrt(x + y.T - 2*X.dot(self.X_train.T))
 
         return dists
 
@@ -165,7 +165,8 @@ class KNearestNeighbor(object):
             # Store this label in y_pred[i]. Break ties by choosing the smaller     #
             # label.                                                                #
             #########################################################################
-            higher_occ_value = [closest_y.count(val) for val in np.unique(closest_y)]  # for each class 0 to 9, you will have the nb of occurence
-            y_pred[i] = closest_y[(np.argsort(higher_occ_value)[-1])]
+            unique_closest_y = np.unique(closest_y)
+            higher_occ_value = [closest_y.count(val) for val in unique_closest_y]  # for each class 0 to 9 present in closest_y, you will have the nb of occurence
+            y_pred[i] = unique_closest_y[np.argsort(higher_occ_value)[-1]]
 
         return y_pred
