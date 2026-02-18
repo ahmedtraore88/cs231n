@@ -1,1 +1,9 @@
-assignment1/cs231n/__pycache/
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Datasets CS231n
+assignment1/cs231n/datasets/
