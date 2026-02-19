@@ -714,13 +714,24 @@ def softmax_loss(x, y):
     - loss: Scalar giving the loss
     - dx: Gradient of the loss with respect to x
     """
+    # here we will use categorical cross entropy, bc we're going to do multi-class prediction
     loss, dx = None, None
-
+    N = x.shape[0]
     ###########################################################################
-    # TODO: Copy over your solution from A1.
+    # DONE: Copy over your solution from A1.
     ###########################################################################
+    x_expo = np.exp(x)
+    softmax_mat = x_expo / np.sum(x_expo, axis=1, keepdims=True)
+    l = 0
+    for i in range(N):
+        l += - np.log(softmax_mat[i, y[i]])
 
+    loss = l/N
+    dx = softmax_mat.copy()
+    dx[np.arange(N), y] -= 1 # faster than do a loop
+    dx = dx/N
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
+    
     return loss, dx
