@@ -46,7 +46,7 @@ class TwoLayerNet(object):
         self.reg = reg
 
         ############################################################################
-        # TODO: Initialize the weights and biases of the two-layer net. Weights    #
+        # DONE: Initialize the weights and biases of the two-layer net. Weights    #
         # should be initialized from a Gaussian centered at 0.0 with               #
         # standard deviation equal to weight_scale, and biases should be           #
         # initialized to zero. All weights and biases should be stored in the      #
@@ -54,6 +54,10 @@ class TwoLayerNet(object):
         # and biases using the keys 'W1' and 'b1' and second layer                 #
         # weights and biases using the keys 'W2' and 'b2'.                         #
         ############################################################################
+        self.W1, self.b1 = np.random.normal(loc=0.0, scale=weight_scale, size=(input_dim, hidden_dim)), np.zeros((hidden_dim,)) 
+        self.W2, self.b2 = np.random.normal(loc=0.0, scale=weight_scale, size=(hidden_dim, num_classes)), np.zeros((num_classes,))
+        self.params["W1"], self.params["b1"]= self.W1, self.b1
+        self.params["W2"], self.params["b2"]= self.W2, self.b2
 
         ############################################################################
         #                             END OF YOUR CODE                             #
@@ -80,9 +84,11 @@ class TwoLayerNet(object):
         """
         scores = None
         ############################################################################
-        # TODO: Implement the forward pass for the two-layer net, computing the    #
+        # DONE: Implement the forward pass for the two-layer net, computing the    #
         # class scores for X and storing them in the scores variable.              #
         ############################################################################
+        out, cache1 = affine_relu_forward(X, self.params['W1'], self.params['b1'])
+        scores, cache2 = affine_forward(out, self.params['W2'], self.params['b2'])
 
         ############################################################################
         #                             END OF YOUR CODE                             #
@@ -94,7 +100,7 @@ class TwoLayerNet(object):
 
         loss, grads = 0, {}
         ############################################################################
-        # TODO: Implement the backward pass for the two-layer net. Store the loss  #
+        # DONE: Implement the backward pass for the two-layer net. Store the loss  #
         # in the loss variable and gradients in the grads dictionary. Compute data #
         # loss using softmax, and make sure that grads[k] holds the gradients for  #
         # self.params[k]. Don't forget to add L2 regularization!                   #
@@ -103,7 +109,20 @@ class TwoLayerNet(object):
         # automated tests, make sure that your L2 regularization includes a factor #
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
-
+        loss, dZ2 = softmax_loss(scores, y) 
+        loss += 0.5 * self.reg * (np.sum(self.params["W2"] * self.params["W2"]) + np.sum(self.params["W1"] * self.params["W1"]))
+        # dW2 = np.dot(out.T, dZ2) + self.reg * self.params["W2"]
+        # db2 = np.sum(dZ2, axis=0)
+        # dhidden = np.dot(dZ2, self.params["W2"].T)
+        # dW1 = np.dot(X.T, dhidden) + self.reg * self.params["W1"]
+        # db1 = np.sum(dhidden, axis=0)
+        dout, dW2, db2 = affine_backward(dZ2, cache2)
+        _, dW1, db1 = affine_relu_backward(dout, cache1)
+        dW1 += self.reg * self.params["W1"] 
+        dW2 += self.reg * self.params["W2"]
+        grads["W1"], grads["b1"]= dW1, db1
+        grads["W2"], grads["b2"]= dW2, db2
+        
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
