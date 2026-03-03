@@ -216,13 +216,20 @@ class FullyConnectedNet(object):
         # beta2, etc. Scale parameters should be initialized to ones and shift     #
         # parameters should be initialized to zeros.                               #
         ############################################################################
-        self.params['W1'], self.params['b1'] = np.random.normal(loc=0.0, scale=weight_scale, size=(input_dim, hidden_dims)), np.zeros((hidden_dims,)) 
-        self.params['W2'], self.params['b2'] = np.random.normal(loc=0.0, scale=weight_scale, size=(hidden_dims, num_classes)), np.zeros((num_classes,))
+        nb_hidden_layers = len(hidden_dims)
 
-        self.params['gamma1'], self.params['beta1'] = np.ones((hidden_dims,)), np.zeros((hidden_dims,))
-        self.params['gamma2'], self.params['beta2'] = np.ones((num_classes,)), np.zeros((num_classes,))
+        for i in range(nb_hidden_layers):
+            if i == 0:
+                self.params[f'W{i+1}'], self.params[f'b{i+1}'] = np.random.normal(loc=0.0, scale=weight_scale, size=(input_dim, hidden_dims[i])), np.zeros((hidden_dims[i],)) 
+            elif i == nb_hidden_layers - 1:
+               self.params[f'W{i+1}'], self.params[f'b{i+1}'] = np.random.normal(loc=0.0, scale=weight_scale, size=(hidden_dims[i], num_classes)), np.zeros((num_classes,))
+            else:
+                self.params[f'W{i+1}'], self.params[f'b{i+1}'] = np.random.normal(loc=0.0, scale=weight_scale, size=(hidden_dims[i], hidden_dims[i+1])), np.zeros((hidden_dims[i+1],))
 
-
+        
+        for i in range(nb_hidden_layers):
+            self.params[f'gamma{i+1}'], self.params[f'beta{i+1}'] = np.ones((hidden_dims[i],)), np.zeros((hidden_dims[i],))
+        self.params[f'gamma{nb_hidden_layers+1}'], self.params[f'beta{nb_hidden_layers+1}'] = np.ones((num_classes,)), np.zeros((num_classes,))
 
         ############################################################################
         #                             END OF YOUR CODE                             #
@@ -293,6 +300,37 @@ class FullyConnectedNet(object):
         # self.bn_params[1] to the forward pass for the second batch normalization #
         # layer, etc.                                                              #
         ############################################################################
+        # HAVE TO DO: Implement the batchnorm_forward function in layers file, quite fast using directly the function here
+        caches = []
+        for i in range(self.num_layers):
+
+            if i == 0:
+                out, cache = affine_forward(X, self.params[f'W{i+1}'], self.params[f'b{i+1}'])
+                caches.append(cache)
+                if self.normalization:
+                    mu, sig = np.mean(out, axis=0), np.mean((out - mu)**2, axis=0)
+                    Z_thilde = (out - mu) / sig
+                    out = self.params[f'gamma{i+1}'] * Z_thilde + self.params[f'beta{i+1}']
+                    out, cache = relu_forward(out)
+                    caches.append(cache)
+                    if self.use_dropout:
+                        pass
+    
+            elif i == self.num_layers - 1:
+                scores, cache = affine_forward(out, self.params[f'W{i+1}'], self.params[f'b{i+1}'])
+                caches.append(cache)
+
+            else:
+               out, cache = affine_forward(out, self.params[f'W{i+1}'], self.params[f'b{i+1}'])
+               caches.append(cache)
+               if self.normalization:
+                    mu, sig = np.mean(out, axis=0), np.mean((out - mu)**2, axis=0)
+                    Z_thilde = (out - mu) / sig
+                    out = self.params[f'gamma{i+1}'] * Z_thilde + self.params[f'beta{i+1}']
+                    out, cache = relu_forward(out)
+                    caches.append(cache)
+                    if self.use_dropout:
+                        pass
 
         ############################################################################
         #                             END OF YOUR CODE                             #
@@ -316,6 +354,8 @@ class FullyConnectedNet(object):
         # automated tests, make sure that your L2 regularization includes a factor #
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
+
+
 
         ############################################################################
         #                             END OF YOUR CODE                             #
