@@ -145,7 +145,7 @@ def batchnorm_forward(x, gamma, beta, bn_param):
       - eps: Constant for numeric stability
       - momentum: Constant for running mean / variance.
       - running_mean: Array of shape (D,) giving running mean of features
-      - running_var Array of shape (D,) giving running variance of features
+      - running_var: Array of shape (D,) giving running variance of features
 
     Returns a tuple of:
     - out: of shape (N, D)
@@ -162,7 +162,7 @@ def batchnorm_forward(x, gamma, beta, bn_param):
     out, cache = None, None
     if mode == "train":
         #######################################################################
-        # TODO: Implement the training-time forward pass for batch norm.      #
+        # DONE: Implement the training-time forward pass for batch norm.      #
         # Use minibatch statistics to compute the mean and variance, use      #
         # these statistics to normalize the incoming data, and scale and      #
         # shift the normalized data using gamma and beta.                     #
@@ -182,18 +182,32 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         # Referencing the original paper (https://arxiv.org/abs/1502.03167)   #
         # might prove to be helpful.                                          #
         #######################################################################
-        pass
+        # computing the mean and var for each features and after process batch_norm steps
+        mu = np.mean(x, axis=0)
+        sig2 = np.mean((x - mu)**2, axis=0)
+        x_thilde = (x - mu) / np.sqrt(sig2 + eps)
+        out = gamma * x_thilde + beta
+        cache = x, x_thilde, gamma, beta, eps, mu, sig2
+
+        # updating running_mean and running_var for test part
+        running_mean = momentum * running_mean + (1 - momentum) * mu
+        running_var = momentum * running_var + (1 - momentum) * sig2
+
+
         #######################################################################
         #                           END OF YOUR CODE                          #
         #######################################################################
     elif mode == "test":
         #######################################################################
-        # TODO: Implement the test-time forward pass for batch normalization. #
+        # DONE: Implement the test-time forward pass for batch normalization. #
         # Use the running mean and variance to normalize the incoming data,   #
         # then scale and shift the normalized data using gamma and beta.      #
         # Store the result in the out variable.                               #
         #######################################################################
-        pass
+        # In test, the input is alone and we can't compute mean/var so we rely on running_mean/var
+        # the size is smtg like (1, N), N represent the number of neuron in the hidden layer
+        x_thilde = (x - running_mean) / np.sqrt(running_var + eps)
+        out = gamma * x_thilde + beta
         #######################################################################
         #                          END OF YOUR CODE                           #
         #######################################################################
@@ -226,11 +240,21 @@ def batchnorm_backward(dout, cache):
     """
     dx, dgamma, dbeta = None, None, None
     ###########################################################################
-    # TODO: Implement the backward pass for batch normalization. Store the    #
+    # DONE: Implement the backward pass for batch normalization. Store the    #
     # results in the dx, dgamma, and dbeta variables.                         #
     # Referencing the original paper (https://arxiv.org/abs/1502.03167)       #
     # might prove to be helpful.                                              #
     ###########################################################################
+    x, x_thilde, gamma, beta, eps, mu, sig2 = cache
+    dbeta = np.sum(dout, axis=0)
+    dgamma = np.sum(dout * x_thilde, axis=0) # product element-wise not dot product, check wisely the paper
+
+    # computing the gradient of some variables useful for dx gradient calculation
+    m = x.shape[0]  # it can be mu, sig2 and plenty of ideas
+    dx_thilde = dout * gamma
+    dsig2 = np.sum(dx_thilde * (x - mu), axis=0) * (-1/2) * (sig2 + eps) ** (-3/2)
+    dmu = np.sum(dx_thilde * (-1/np.sqrt(sig2 + eps)), axis=0) + dsig2 * (np.sum(-2 * (x - mu), axis=0))/ m 
+    dx = dx_thilde * 1/np.sqrt(sig2 + eps) + dsig2 * 2*(x - mu)/m + dmu * 1/m
 
     ###########################################################################
     #                             END OF YOUR CODE                            #
