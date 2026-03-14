@@ -289,7 +289,7 @@ class FullyConnectedNet(object):
                 bn_param["mode"] = mode
         scores = None
         ############################################################################
-        # TODO: Implement the forward pass for the fully connected net, computing  #
+        # DONE: Implement the forward pass for the fully connected net, computing  #
         # the class scores for X and storing them in the scores variable.          #
         #                                                                          #
         # When using dropout, you'll need to pass self.dropout_param to each       #
@@ -300,38 +300,29 @@ class FullyConnectedNet(object):
         # self.bn_params[1] to the forward pass for the second batch normalization #
         # layer, etc.                                                              #
         ############################################################################
-        # HAVE TO DO: Implement the batchnorm_forward function in layers file, quite fast using directly the function here
-        caches = []
-        for i in range(self.num_layers):
-
-            if i == 0:
-                out, cache = affine_forward(X, self.params[f'W{i+1}'], self.params[f'b{i+1}'])
-                caches.append(cache)
-                if self.normalization:
-                    mu, sig = np.mean(out, axis=0), np.mean((out - mu)**2, axis=0)
-                    Z_thilde = (out - mu) / sig
-                    out = self.params[f'gamma{i+1}'] * Z_thilde + self.params[f'beta{i+1}']
-                    out, cache = relu_forward(out)
-                    caches.append(cache)
-                    if self.use_dropout:
-                        pass
-    
-            elif i == self.num_layers - 1:
-                scores, cache = affine_forward(out, self.params[f'W{i+1}'], self.params[f'b{i+1}'])
-                caches.append(cache)
-
+        hidden_caches = []
+        X = X.reshape(X.shape[0], -1)  
+        out = X
+        for i in range(1, self.num_layers):
+            layer_cache = {}
+            out, layer_cache["affine"] = affine_forward(out, self.params[f'W{i}'], self.params[f'b{i}']) 
+                
+            if self.normalization == "batchnorm":
+                out, layer_cache["norm"] = batchnorm_forward(out, self.params[f"gamma{i}"], self.params[f"beta{i}"], self.bn_params[i-1])
             else:
-               out, cache = affine_forward(out, self.params[f'W{i+1}'], self.params[f'b{i+1}'])
-               caches.append(cache)
-               if self.normalization:
-                    mu, sig = np.mean(out, axis=0), np.mean((out - mu)**2, axis=0)
-                    Z_thilde = (out - mu) / sig
-                    out = self.params[f'gamma{i+1}'] * Z_thilde + self.params[f'beta{i+1}']
-                    out, cache = relu_forward(out)
-                    caches.append(cache)
-                    if self.use_dropout:
-                        pass
+               layer_cache["norm"] = None
 
+            out, layer_cache["relu"] = relu_forward(out)
+
+            if self.use_dropout:
+                out, layer_cache["dropout"] = dropout_forward(out, self.dropout_param)
+            else:
+               layer_cache["dropout"] = None
+            
+            hidden_caches.append(layer_cache)
+
+        scores, final_cache = affine_forward(out, self.params[f'W{self.num_layers}'], self.params[f'b{self.num_layers}']) # don't forget that the score is brut logit
+         
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -355,7 +346,7 @@ class FullyConnectedNet(object):
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
 
-
+        
 
         ############################################################################
         #                             END OF YOUR CODE                             #
