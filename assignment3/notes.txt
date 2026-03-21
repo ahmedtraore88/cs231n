@@ -1,0 +1,11 @@
+Q1: Image Captioning with Transformers
+The notebook Transformer_Captioning.ipynb will walk you through the implementation of a Transformer model and apply it to image captioning on COCO.
+
+Q2: Self-Supervised Learning for Image Classification
+In the notebook Self_Supervised_Learning.ipynb, you will learn how to leverage self-supervised pretraining to obtain better performance on image classification tasks. When first opening the notebook, go to Runtime > Change runtime type and set Hardware accelerator to GPU.
+
+Q3: Denoising Diffusion Probabilistic Models
+In the notebook DDPM.ipynb, you will implement a Denoising Diffusion Probabilistic Model (DDPM) and apply it to image generation.
+
+Q4: CLIP and Dino
+In the notebook CLIP_DINO.ipynb, you will implement CLIP and DINO, two self-supervised learning methods that leverage large amounts of unlabeled data to learn visual representations.
